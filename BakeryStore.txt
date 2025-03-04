@@ -78,9 +78,10 @@ public class LoginForm extends JFrame {
         new LoginForm().setVisible(true);
     }
 }
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 DashboardForm
+
 
 
 package breadstore2;
@@ -325,7 +326,8 @@ public class DashboardForm extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel4;
     // End of variables declaration                   
 }
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 BreadCategory 
 
@@ -1092,7 +1094,7 @@ public class Employees extends javax.swing.JFrame {
     private javax.swing.JTable jTable1;
     // End of variables declaration                   
 }
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Order 
 
 package breadstore2;
@@ -1109,7 +1111,7 @@ public class Order extends javax.swing.JFrame {
     
     public Order() {
         initComponents();
-        conn = DatabaseConnection.getConnection(); // Pastikan koneksi tidak null
+        conn = DatabaseConnection.getConnection();
         if (conn == null) {
             JOptionPane.showMessageDialog(null, "Koneksi ke database gagal!");
         } else {
@@ -1119,21 +1121,11 @@ public class Order extends javax.swing.JFrame {
 
     
      // Metode untuk menampilkan data ke JTable
-    private void loadOrders() {
-        DefaultTableModel model = new DefaultTableModel();
-        model.addColumn("id_orders");
-        model.addColumn("id_customers");
-        model.addColumn("id_employees");
-        model.addColumn("quantity");
-        model.addColumn("price");
-        model.addColumn("order_date");
-        model.addColumn("payment_method");
-
-        try {
-            Statement stmt = conn.createStatement();
-            String sql = "SELECT * FROM orders";
-            ResultSet rs = stmt.executeQuery(sql);
-
+     private void loadOrders() {
+        DefaultTableModel model = new DefaultTableModel(new String[]{"id_orders", "id_customers", "id_employees", "quantity", "price", "order_date", "payment_method"}, 0);
+        jTable1.setModel(model);
+        
+        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT * FROM orders")) {
             while (rs.next()) {
                 model.addRow(new Object[]{
                     rs.getInt("id_orders"),
@@ -1145,78 +1137,79 @@ public class Order extends javax.swing.JFrame {
                     rs.getString("payment_method")
                 });
             }
-            jTable1.setModel(model);
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Gagal memuat data: " + e.getMessage());
         }
     }
     
-    // Fungsi untuk mengonversi String ke java.sql.Date
     private java.sql.Date convertStringToDate(String orderDate) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            java.util.Date parsedDate = sdf.parse(orderDate);
-            return new java.sql.Date(parsedDate.getTime());
+            return new java.sql.Date(sdf.parse(orderDate).getTime());
         } catch (ParseException e) {
             JOptionPane.showMessageDialog(this, "Format tanggal salah! Gunakan format: yyyy-MM-dd");
             return null;
         }
     }
     
-     public void addOrder(int idOrders, int idCustomers, int idEmployees, int quantity, double price, String orderDate, String paymentMethod) {
-        String sql = "INSERT INTO orders (id_orders, id_customers, id_employees, quantity, price, order_date, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, idOrders);
-            pstmt.setInt(2, idCustomers);
-            pstmt.setInt(3, idEmployees);
-            pstmt.setInt(4, quantity);
-            pstmt.setDouble(5, price);
-            pstmt.setDate(6, convertStringToDate(orderDate)); // Konversi tanggal
-            pstmt.setString(7, paymentMethod);
+     private void addOrder() {
+        try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO orders VALUES (?, ?, ?, ?, ?, ?, ?)");) {
+            pstmt.setInt(1, Integer.parseInt(jTextField7.getText()));
+            pstmt.setInt(2, Integer.parseInt(jTextField8.getText()));
+            pstmt.setInt(3, Integer.parseInt(jTextField9.getText()));
+            pstmt.setInt(4, Integer.parseInt(jTextField1.getText()));
+            pstmt.setDouble(5, Double.parseDouble(jTextField10.getText()));
+            pstmt.setDate(6, convertStringToDate(jTextField12.getText()));
+            pstmt.setString(7, jTextField2.getText());
             pstmt.executeUpdate();
-            JOptionPane.showMessageDialog(null, "Data berhasil ditambahkan!");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Gagal menambahkan data: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Data berhasil ditambahkan!");
+            loadOrders();
+        } catch (SQLException | NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Gagal menambahkan data: " + e.getMessage());
         }
-     }
+    }
         
             // Fungsi untuk memperbarui order
-    public void updateOrder(int idOrders, int idCustomers, int idEmployees, int quantity, double price, String orderDate, String paymentMethod) {
-        String sql = "UPDATE orders SET id_customers=?, id_employees=?, quantity=?, price=?, order_date=?, payment_method=? WHERE id_orders=?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, idCustomers);
-            pstmt.setInt(2, idEmployees);
-            pstmt.setInt(3, quantity);
-            pstmt.setDouble(4, price);
-            pstmt.setDate(5, convertStringToDate(orderDate)); // Konversi tanggal
-            pstmt.setString(6, paymentMethod);
-            pstmt.setInt(7, idOrders);
-
-            pstmt.executeUpdate();
-            JOptionPane.showMessageDialog(null, "Data berhasil diperbarui!");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Gagal memperbarui data: " + e.getMessage());
+    private void updateOrder() {
+        if (jTextField7.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Pilih data terlebih dahulu!");
+            return;
+        }
+        try (PreparedStatement pstmt = conn.prepareStatement("UPDATE orders SET id_customers=?, id_employees=?, quantity=?, price=?, order_date=?, payment_method=? WHERE id_orders=?")) {
+            pstmt.setInt(1, Integer.parseInt(jTextField8.getText()));
+            pstmt.setInt(2, Integer.parseInt(jTextField9.getText()));
+            pstmt.setInt(3, Integer.parseInt(jTextField1.getText()));
+            pstmt.setDouble(4, Double.parseDouble(jTextField10.getText()));
+            pstmt.setDate(5, convertStringToDate(jTextField12.getText()));
+            pstmt.setString(6, jTextField2.getText());
+            pstmt.setInt(7, Integer.parseInt(jTextField7.getText()));
+            
+            int affectedRows = pstmt.executeUpdate();
+            JOptionPane.showMessageDialog(this, affectedRows > 0 ? "Data berhasil diperbarui!" : "Data tidak ditemukan!");
+            loadOrders();
+        } catch (SQLException | NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Gagal memperbarui data: " + e.getMessage());
         }
     }
 
     // Fungsi untukmenghapus order
-    public void deleteOrder(int idOrders) {
-        String sql = "DELETE FROM orders WHERE id_orders=?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, idOrders);
-
-            pstmt.executeUpdate();
-            JOptionPane.showMessageDialog(null, "Data berhasil dihapus!");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Gagal menghapus data: " + e.getMessage());
+    private void deleteOrder() {
+        if (jTextField7.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Pilih data yang ingin dihapus!");
+            return;
+        }
+        try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM orders WHERE id_orders=?")) {
+            pstmt.setInt(1, Integer.parseInt(jTextField7.getText()));
+            
+            int affectedRows = pstmt.executeUpdate();
+            JOptionPane.showMessageDialog(this, affectedRows > 0 ? "Data berhasil dihapus!" : "Data tidak ditemukan!");
+            loadOrders();
+        } catch (SQLException | NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Gagal menghapus data: " + e.getMessage());
         }
     }
+    
+    
 
     
 
@@ -1342,6 +1335,11 @@ public class Order extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
+        jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTable1MouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(jTable1);
 
         jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 60, 550, 380));
@@ -1439,6 +1437,22 @@ public class Order extends javax.swing.JFrame {
         this.dispose(); // Menutup form saat ini (BreadCategory atau Customers)
     }                                        
 
+    private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {                                     
+        // TODO add your handling code here:
+        int selectedRow = jTable1.getSelectedRow();
+        if (selectedRow >= 0) {
+            jTextField7.setText(jTable1.getValueAt(selectedRow, 0).toString());
+            jTextField8.setText(jTable1.getValueAt(selectedRow, 1).toString());
+            jTextField9.setText(jTable1.getValueAt(selectedRow, 2).toString());
+            jTextField1.setText(jTable1.getValueAt(selectedRow, 3).toString());
+            jTextField10.setText(jTable1.getValueAt(selectedRow, 4).toString());
+            jTextField12.setText(jTable1.getValueAt(selectedRow, 5).toString());
+            jTextField2.setText(jTable1.getValueAt(selectedRow, 6).toString());
+        }
+    
+
+    }                                    
+
     
     
     /**
@@ -1504,7 +1518,8 @@ public class Order extends javax.swing.JFrame {
 
     
 }
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 OrdersDetail
 
@@ -1526,92 +1541,76 @@ public class OrdersDetail extends javax.swing.JFrame {
     }
     
       private void tampilkanData() {
-    DefaultTableModel model = new DefaultTableModel();
-    model.addColumn("id_orders_detail");
-    model.addColumn("id_orders");
-    model.addColumn("id_bread");
-    model.addColumn("total_quantity");
-    model.addColumn("total_price");
-    model.addColumn("payment_date");
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("id_orders_detail");
+        model.addColumn("id_orders");
+        model.addColumn("id_bread");
+        model.addColumn("total_quantity");
+        model.addColumn("total_price");
+        model.addColumn("payment_date");
 
-    try {
-        Connection conn = DatabaseConnection.getConnection();
-        Statement st = conn.createStatement();
-        ResultSet rs = st.executeQuery("SELECT * FROM orders_detail"); // Sesuaikan nama tabel
-
-        int rowCount = 0; // Untuk mengecek jumlah baris
-        while (rs.next()) {
-    System.out.println("Data ditemukan: " + rs.getString("id_orders_detail")); // Debugging
-    model.addRow(new Object[]{
-        rs.getString("id_orders_detail"),
-        rs.getString("id_orders"),
-        rs.getString("id_bread"),
-        rs.getInt("total_quantity"),
-        rs.getDouble("total_price"),
-        rs.getDate("payment_date")
-    });
-}
-
-        jTable2.setModel(model);
-        
-        System.out.println("Jumlah data yang diambil: " + rowCount); // Cek jumlah data yang ditampilkan
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-      private void tambahData() {
         try {
             Connection conn = DatabaseConnection.getConnection();
-            String sql = "INSERT INTO orders_detail (id_orders, id_bread, total_quantity, total_price, payment_date) VALUES (?, ?, ?, ?, ?)";
+            Statement st = conn.createStatement();
+            ResultSet rs = st.executeQuery("SELECT * FROM orders_detail");
 
-            PreparedStatement pst = conn.prepareStatement(sql);
-            pst.setString(1, jTextField13.getText()); // id_orders
-            pst.setString(2, jTextField14.getText()); // id_bread
-            pst.setInt(3, Integer.parseInt(jTextField3.getText())); // total_quantity
-            pst.setDouble(4, Double.parseDouble(jTextField15.getText())); // total_price
-            pst.setDate(5, java.sql.Date.valueOf(jTextField16.getText())); // payment_date
-
-            int rowsInserted = pst.executeUpdate();
-            if (rowsInserted > 0) {
-                JOptionPane.showMessageDialog(this, "Data berhasil ditambahkan!");
-                tampilkanData(); // Refresh JTable setelah insert
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                    rs.getString("id_orders_detail"),
+                    rs.getString("id_orders"),
+                    rs.getString("id_bread"),
+                    rs.getInt("total_quantity"),
+                    rs.getDouble("total_price"),
+                    rs.getDate("payment_date")
+                });
             }
-
+            
+            jTable2.setModel(model);
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+        }
+    }
+      
+      private void updateData() {
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+            String query = "UPDATE orders_detail SET id_orders = ?, id_bread = ?, total_quantity = ?, total_price = ?, payment_date = ? WHERE id_orders_detail = ?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            
+            pstmt.setString(1, jTextField13.getText());
+            pstmt.setString(2, jTextField14.getText());
+            pstmt.setInt(3, Integer.parseInt(jTextField3.getText()));
+            pstmt.setDouble(4, Double.parseDouble(jTextField15.getText()));
+            pstmt.setDate(5, java.sql.Date.valueOf(jTextField16.getText()));
+            pstmt.setString(6, jTextField11.getText());
+            
+            int rowsUpdated = pstmt.executeUpdate();
+            if (rowsUpdated > 0) {
+                JOptionPane.showMessageDialog(this, "Data berhasil diperbarui!");
+            }
+            tampilkanData();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
       // METHOD UNTUK MENGHAPUS DATA DARI DATABASE
-    private void hapusData() {
-        int selectedRow = jTable2.getSelectedRow(); // Ambil baris yang dipilih di JTable
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Pilih data yang ingin dihapus!");
-            return;
-        }
-
-        String id_orders_detail = jTable2.getValueAt(selectedRow, 0).toString(); // Ambil id_orders_detail dari tabel
-
-        int confirm = JOptionPane.showConfirmDialog(this, "Apakah Anda yakin ingin menghapus data ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                Connection conn = DatabaseConnection.getConnection();
-                String sql = "DELETE FROM orders_detail WHERE id_orders_detail = ?";
-                PreparedStatement pst = conn.prepareStatement(sql);
-                pst.setString(1, id_orders_detail);
-
-                int rowsDeleted = pst.executeUpdate();
-                if (rowsDeleted > 0) {
-                    JOptionPane.showMessageDialog(this, "Data berhasil dihapus!");
-                    tampilkanData(); // Refresh JTable setelah delete
-                }
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+    private void deleteData() {
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+            String query = "DELETE FROM orders_detail WHERE id_orders_detail = ?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setString(1, jTextField11.getText());
+            
+            int rowsDeleted = pstmt.executeUpdate();
+            if (rowsDeleted > 0) {
+                JOptionPane.showMessageDialog(this, "Data berhasil dihapus!");
             }
+            tampilkanData();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+    
     }
       
       
@@ -1729,6 +1728,11 @@ public class OrdersDetail extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
+        jTable2.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTable2MouseClicked(evt);
+            }
+        });
         jScrollPane2.setViewportView(jTable2);
 
         jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 70, 550, 360));
@@ -1791,6 +1795,7 @@ public class OrdersDetail extends javax.swing.JFrame {
         e.printStackTrace();
         JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
     }
+      
         
         
 
@@ -1834,6 +1839,19 @@ public class OrdersDetail extends javax.swing.JFrame {
         dashboard.setVisible(true); 
         this.dispose(); // Menutup form saat ini (BreadCategory atau Customers)
     }                                        
+
+    private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {                                     
+        // TODO add your handling code here:
+        int selectedRow = jTable2.getSelectedRow();
+        if (selectedRow >= 0) {
+            jTextField11.setText(jTable2.getValueAt(selectedRow, 0).toString());  // id_orders_detail
+            jTextField13.setText(jTable2.getValueAt(selectedRow, 1).toString());  // id_orders
+            jTextField14.setText(jTable2.getValueAt(selectedRow, 2).toString());  // id_bread
+            jTextField3.setText(jTable2.getValueAt(selectedRow, 3).toString());  // total_quantity
+            jTextField15.setText(jTable2.getValueAt(selectedRow, 4).toString());  // total_price
+            jTextField16.setText(jTable2.getValueAt(selectedRow, 5).toString());  // payment_date
+        }
+    }                                    
 
     /**
      * @param args the command line arguments
@@ -1892,4 +1910,5 @@ public class OrdersDetail extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField3;
     // End of variables declaration                   
 }
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
